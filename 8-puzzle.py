@@ -11,9 +11,9 @@ class Node():
         self.locX = 0
         self.locY = 0
         i = 0
-        for j in range(0,8):
+        for j in range(0,9):
             if state[j] == 0:
-                continue
+                break
             i+=1
         self.locX = math.floor(i%3)
         self.locY = math.floor(i/3)
@@ -21,11 +21,8 @@ class Node():
 
 
     def move(self, direction):
-        index = int(0)
-        # if(self.locY<=2 or self.locY>=6):
-        #     return False
-        # elif(self.locX >= 2 or self.locX == 0):
-        #     return False
+ 
+        print("directions", direction)
         if(direction == 0 and self.locY != 0):
             index = (self.locY - 1) * numrows + self.locX
         elif(direction == 1 and self.locY != numrows - 1):
@@ -86,21 +83,23 @@ class Problem():
 
     def add_frontier(self,n):
         print("came to frontier")
+        if len(self.frontier) == 0:
+            self.frontier.append(n)
         for i in range(len(self.frontier)):
-            print("frontier", self.frontier[i].priority)
+            #print("frontier", self.frontier[i].priority)
             if(self.frontier[i].priority > n.priority):
                 self.frontier.insert(i,n)
-                
+
                 return
-            self.frontier.append(n)
+        self.frontier.append(n)
         
     def solve(self):
         repeated = set([])
         limit = 0
         max_limit = 200000
         max_size = 0
-        
-        queue = [self.head]      
+        frontier_size = []
+        #queue = [self.head]      
         
         #frontier = deque[(front,0)]
         self.frontier.append(self.head)
@@ -108,26 +107,29 @@ class Problem():
 
         #curr.print()
         while limit < max_limit:
-            curr = queue.pop(0)
+            print("Printing State")
             curr.print_state()         
 
-            for i in range(0,3):
+            for i in range(0,4):
                 print("i = ",i)
                 update_state = curr.move(i)
                 if update_state !=-1:
                     if tuple(update_state) not in repeated:
-                        
                         repeated.add(tuple(update_state))
                         update = Node(update_state, self.priority(update_state, curr.depth + 1), curr.depth + 1)
-
+                        print("update", update.state)
                         curr.push(update)
                         #curr = update
-                        queue.append(update)
+                        #queue.append(update)
                         self.add_frontier(update)
-                        #print("came here", curr.leaves[0])
+                        print("------------------------------------",len(self.frontier))
                         curr.print_state()
 
-                    
+
+            if(max_size < len(self.frontier)):
+                max_size = len(self.frontier)
+                frontier_size.append(max_size)
+
             if(curr.state == self.goal_state):
                 print("Goal reached")
                 return
@@ -140,7 +142,6 @@ class Problem():
 
 
 
-
 if __name__ == "__main__":
     print("Welcome to the 8-Puzzle")
 
@@ -150,4 +151,5 @@ if __name__ == "__main__":
     input_state = [1, 2, 3, 4, 8, 0, 7, 6, 5]
 
     prob = Problem(input_state, choice)
-    prob.solve()
+    limit, frontier_size = prob.solve()
+
