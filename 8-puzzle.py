@@ -1,6 +1,8 @@
-import numpy
+import numpy as np
 import math
-from collections import deque
+import time
+
+import matplotlib.pyplot as plt
 numrows = 3
 class Node():
     def __init__(self, state, priority, depth):
@@ -67,22 +69,22 @@ class Problem():
 
     def priority(self, state, depth):
         height = 0
-        if(self.algo==0):
+        if(self.algo=="0"):
             return depth  #Uniform
 
-        elif(self.algo==1):
+        elif(self.algo=="1"):
             for i in range(0,numrows*numrows):
-                if(state[i] != goal_state[i] and state != 0):
+                if(state[i] != self.goal_state[i] and state[i] != 0):
                     height+=1       #A* misplaced
-        elif(self.algo==2):  #A* hamming
+        elif(self.algo=="2"):  
             for i in range(0, numrows*numrows):
                 if(state[i] != 0):
-                    height += math.floor(abs((i+1) % numrows) - math.floor(state[i] % numrows))
-                    height += math.floor(abs((i+1) % numrows) - math.floor(state[i] / numrows))
+                    height += abs(math.floor((i+1) % numrows) - math.floor(state[i] % numrows))
+                    height += abs(math.floor((i+1) / numrows) - math.floor(state[i] / numrows))
         return depth + height       
 
     def add_frontier(self,n):
-        print("came to frontier")
+        
         if len(self.frontier) == 0:
             self.frontier.append(n)
         for i in range(len(self.frontier)):
@@ -98,10 +100,8 @@ class Problem():
         limit = 0
         max_limit = 200000
         max_size = 0
-        frontier_size = []
-        #queue = [self.head]      
-        
-        #frontier = deque[(front,0)]
+
+
         self.frontier.append(self.head)
         curr = self.frontier.pop()
 
@@ -125,31 +125,121 @@ class Problem():
                         print("------------------------------------",len(self.frontier))
                         curr.print_state()
 
+            #limit == Number of Nodes expanded == Time complexity
+            #Queuesize == frontier == Space complexity
+
 
             if(max_size < len(self.frontier)):
+                print("coming here")
                 max_size = len(self.frontier)
-                frontier_size.append(max_size)
+
 
             if(curr.state == self.goal_state):
                 print("Goal reached")
-                return
+                print("Iterations:", limit)
+                print("Max size", max_size)
+                return limit, max_size
+
             else:
                 print("Came to pop frontier")
-                curr = self.frontier.pop()
+                curr = self.frontier.pop(0)
                 d = curr.depth
             limit+=1
         print("Reached the end")
-
 
 
 if __name__ == "__main__":
     print("Welcome to the 8-Puzzle")
 
     print("Enter Algorithm of choice")
-    choice = input("1: Uniform, 2: A* w/ misplaced, 3: A* w/ manhattan distance")
+    #choice = input("0: Uniform, 1: A* w/ misplaced, 2: A* w/ manhattan distance")
 
-    input_state = [1, 2, 3, 4, 8, 0, 7, 6, 5]
+    #input_state = [1, 2, 3, 4, 8, 0, 7, 6, 5]
+    # time.sleep(5)
 
-    prob = Problem(input_state, choice)
-    limit, frontier_size = prob.solve()
+
+
+
+    ## Analysis ##
+
+    ##Easy Puzzle##
+    # 1 2 3
+    # 0 4 6
+    # 7 5 8
+
+    names = ["Uniform Cost Search", "A * with the Misplaced Tile heuristic", "A* with the Manhattan Distance heuristic"]
+    easy_front = []
+    easy_limit = []
+    easy_puzzle = [1, 2, 3, 0, 4, 6, 7, 5, 8]
+
+
+    prob_easy_0 = Problem(easy_puzzle, "0")
+    limit_easy_0, frontier_size_easy_0 = prob_easy_0.solve()
+   
+    prob_easy_1 = Problem(easy_puzzle, "1")
+    limit_easy_1, frontier_size_easy_1 = prob_easy_1.solve()
+
+    prob_easy_2 = Problem(easy_puzzle, "2")
+    limit_easy_2, frontier_size_easy_2 = prob_easy_2.solve()
+
+    easy_front.extend((frontier_size_easy_0,frontier_size_easy_1,frontier_size_easy_2))
+    easy_limit.extend((limit_easy_0, limit_easy_1, limit_easy_2))
+  ##Hard Puzzle##
+    # 1 6 7
+    # 5 0 3
+    # 4 8 2
+
+    hard_puzzle = [1, 6, 7, 5, 0, 3, 4, 8, 2]   
+    hard_front = []
+    hard_limit = []
+    prob_hard_0 = Problem(hard_puzzle, "0")
+    limit_hard_0, frontier_size_hard_0 = prob_hard_0.solve()
+   
+    prob_hard_1 = Problem(hard_puzzle, "1")
+    limit_hard_1, frontier_size_hard_1 = prob_hard_1.solve()
+
+    prob_hard_2 = Problem(hard_puzzle, "2")
+    limit_hard_2, frontier_size_hard_2 = prob_hard_2.solve()
+
+    hard_front.extend((frontier_size_hard_0,frontier_size_hard_1,frontier_size_hard_2))
+    hard_limit.extend((limit_hard_0,limit_hard_1,limit_hard_2))
+
+    x_pos = [i for i, _ in enumerate(names)]
+
+
+    # Graph showing time complexity for easy puzzle #
+    plt.bar(names, easy_limit, color="green")
+    plt.xlabel("Algorithms")
+    plt.ylabel("Time Complexity")
+    plt.title("Time Complexity -- Easy Puzzle")
+    plt.xticks(x_pos, names)
+    plt.show()
+
+
+    # Graph showing time complexity for hard puzzle #
+    plt.bar(names, hard_limit, color="green")
+    plt.xlabel("Algorithms")
+    plt.ylabel("Time Complexity")
+    plt.title("Time Complexity -- Hard Puzzle")
+    plt.xticks(x_pos, names)
+    plt.show()
+
+    # Graph showing space complexity for easy puzzle
+    plt.bar(names, easy_front, color="green")
+    plt.xlabel("Algorithms")
+    plt.ylabel("Space Complexity")
+    plt.title("Space Complexity -- Easy Puzzle")
+    plt.xticks(x_pos, names)
+    plt.show()
+
+
+    # Graph showing space complexity for hard puzzle #
+    plt.bar(names, hard_front, color="green")
+    plt.xlabel("Algorithms")
+    plt.ylabel("Time Complexity")
+    plt.title("Time Complexity -- Hard Puzzle")
+    plt.xticks(x_pos, names)
+    plt.show()
+
+
 
