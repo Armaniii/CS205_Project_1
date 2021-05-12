@@ -1,8 +1,7 @@
 import numpy as np
 import math
-import time
-
 import matplotlib.pyplot as plt
+
 numrows = 3
 class Node():
     def __init__(self, state, priority, depth):
@@ -23,9 +22,7 @@ class Node():
 
 
     def move(self, direction):
- 
-        print("directions", direction)
-        if(direction == 0 and self.locY != 0):
+         if(direction == 0 and self.locY != 0):
             index = (self.locY - 1) * numrows + self.locX
         elif(direction == 1 and self.locY != numrows - 1):
             index = (self.locY + 1) * numrows + self.locX
@@ -217,7 +214,7 @@ if __name__ == "__main__":
 
 
     # Graph showing time complexity for hard puzzle #
-    plt.bar(names, hard_limit, color="green")
+    plt.bar(names, hard_limit, color="red")
     plt.xlabel("Algorithms")
     plt.ylabel("Time Complexity")
     plt.title("Time Complexity -- Hard Puzzle")
@@ -234,10 +231,10 @@ if __name__ == "__main__":
 
 
     # Graph showing space complexity for hard puzzle #
-    plt.bar(names, hard_front, color="green")
+    plt.bar(names, hard_front, color="red")
     plt.xlabel("Algorithms")
-    plt.ylabel("Time Complexity")
-    plt.title("Time Complexity -- Hard Puzzle")
+    plt.ylabel("Space Complexity")
+    plt.title("Space Complexity -- Hard Puzzle")
     plt.xticks(x_pos, names)
     plt.show()
 
