@@ -2,25 +2,26 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 
+# Number of rows in puzzle. Change for different puzzle sizes
 numrows = 3
 class Node():
     def __init__(self, state, priority, depth):
         self.state = state
         self.priority = priority
         self.depth = depth
-        self.leaves = []
         self.loc_x = 0
         self.loc_y = 0
+        #Finding the empty space in the puzzle. 
         i = 0
         for j in range(0,9):
             if state[j] == 0:
                 break
             i+=1
+        #Start with the empty space
         self.loc_x = math.floor(i%3)
         self.loc_y = math.floor(i/3)
             
-
-
+    # Move algorithm. Finding the possible directions to move based on a numrows grid. 
     def move(self, direction):
         if(direction == 0 and self.loc_y != 0):
             index = (self.loc_y - 1) * numrows + self.loc_x
@@ -33,18 +34,16 @@ class Node():
         else:
             return -1
 
+        # Update state to the new cell state logic.
         state_update = self.state.copy()
-        print(state_update)
-
         temp = state_update[int(index)]
 
         state_update[int(index)] = state_update[int(self.loc_y * numrows + self.loc_x)]
         state_update[int(self.loc_y * numrows + self.loc_x)] = temp
         return state_update
 
-    def push(self,n):
-        self.leaves.append(n)
 
+    # Helper function to print the current state of the node in a 'pretty' way.
     def print_state(self):
         for i in range(0,numrows):
             print(self.state[i * numrows],end='')
@@ -60,15 +59,13 @@ class Problem():
         self.goal_state = [1,2,3,4,5,6,7,8,0]
         self.algo = algo
         self.head = Node(init_state,0,0)
-        self.frontier = []
+        self.nodes = []
 
     def priority(self, state, depth):
         height = 0
-
         #Uniform cost search
         if(self.algo=="0"):
             return depth  
-
         #A* with misplaced tile distance calculations
         elif(self.algo=="1"):
             for i in range(0,numrows*numrows):
@@ -82,56 +79,53 @@ class Problem():
                     height += abs(math.floor((i+1) / numrows) - math.floor(state[i] / numrows))
         return depth + height       
 
-    def add_frontier(self,n):
-        
-        if len(self.frontier) == 0:                                 # Handles initial case when the queue is empty.
-            self.frontier.append(n)
-        for i in range(len(self.frontier)):  
-            if(self.frontier[i].priority > n.priority):             # Sorting the queue by priority
-                self.frontier.insert(i,n)
+    # Turning the queue into a priority queue. Essentially a sorting algorithm to sort based on the priority calculated from chosen algorithm 
+    def add_nodes(self,n):
+        if len(self.nodes) == 0:                                 # Handles initial case when the queue is empty.
+            self.nodes.append(n)
+        for i in range(len(self.nodes)):  
+            if(self.nodes[i].priority > n.priority):             # Sorting the queue by priority
+                self.nodes.insert(i,n)
                 return
-        self.frontier.append(n)
+        self.nodes.append(n)
         
-    def solve(self):
-        repeated = set([])
-        limit = 0
-        max_limit = 200000
+    def general_search(self):
+        repeated = set([])                                      # Set of repeated states
+        limit = 0 
+        max_limit = 100000                                      
         max_size = 0
 
 
-        self.frontier.append(self.head)
-        curr = self.frontier.pop()
+        self.nodes.append(self.head)                            # Adding the initial nodes 
+        curr = self.nodes.pop()     
 
         while limit < max_limit:
+            print("State: ", limit)
             curr.print_state()         
 
-            for i in range(0,4):
-                update_state = curr.move(i)
-                if update_state !=-1:
-                    if tuple(update_state) not in repeated:
-                        repeated.add(tuple(update_state))
+            for i in range(0,4):                                           # Looping the node to move in all four directions
+                update_state = curr.move(i)                                # Creating the update node in that direction
+                if update_state !=-1:                                      # Making sure it is a valid move. Move() will return -1 if not valid. i.e hit a wall
+                    if tuple(update_state) not in repeated:                # Making sure we haven't visited the cell before
+                        repeated.add(tuple(update_state))                  # Adding the node we have now "visited" to the repeated set
                         update = Node(update_state, self.priority(update_state, curr.depth + 1), curr.depth + 1)
-                        curr.push(update)
-                        self.add_frontier(update)
-                        # print("------------------------------------",len(self.frontier))
-                        curr.print_state()
+                        self.add_nodes(update)                             
+                        # print("------------------------------------",len(self.nodes))
 
-            if(max_size < len(self.frontier)):
-                max_size = len(self.frontier)
+            # Updating the max depth of the queue 
+            if(max_size < len(self.nodes)):
+                max_size = len(self.nodes)
 
-
+            # Finished the puzzle! Reached the goal state
             if(curr.state == self.goal_state):
                 print("Goal reached")
-                # print("Iterations:", limit)
-                # print("Max size", max_size)
                 return limit, max_size
-
+            
+            # The queue is now sorted so pop the highest priority into the current node and repeat the process again.
             else:
-                curr = self.frontier.pop(0)
-                d = curr.depth
+                curr = self.nodes.pop(0)
             limit+=1
         print("Reached the time limit with no solution")
-
 
 if __name__ == "__main__":
 
@@ -140,13 +134,13 @@ if __name__ == "__main__":
     choice = input("Choice #: ")
     
     if choice == "1":
-        default = [1, 2, 3, 4, 8, 0, 7, 6, 5]
+        default = [1, 2, 3, 0, 4, 6, 7, 5, 8]
         print("Enter Algorithm of choice")
         print("0: Uniform Cost Search, 1: A* with the Misplaced Tile heuristic, 2: A* with the Manhattan Distance heuristic")
         algorithm = input("Choice #: ")
         prob = Problem(default, algorithm)
-        limit,front_size = prob.solve()
-        print("Maximum space: ", front_size)
+        limit,queue_size = prob.general_search()
+        print("Maximum space: ", queue_size)
         print("Nodes expanded (time) ", limit)
         
     elif choice == "2":
@@ -158,42 +152,43 @@ if __name__ == "__main__":
         # 7 5 8
 
         names = ["Uniform Cost Search", "A* with the Misplaced Tile heuristic", "A* with the Manhattan Distance heuristic"]
-        easy_front = []
+        easy_queue = []
         easy_limit = []
         easy_puzzle = [1, 2, 3, 0, 4, 6, 7, 5, 8]
 
 
         prob_easy_0 = Problem(easy_puzzle, "0")
-        limit_easy_0, frontier_size_easy_0 = prob_easy_0.solve()
+        limit_easy_0, nodes_size_easy_0 = prob_easy_0.general_search()
     
         prob_easy_1 = Problem(easy_puzzle, "1")
-        limit_easy_1, frontier_size_easy_1 = prob_easy_1.solve()
+        limit_easy_1, nodes_size_easy_1 = prob_easy_1.general_search()
 
         prob_easy_2 = Problem(easy_puzzle, "2")
-        limit_easy_2, frontier_size_easy_2 = prob_easy_2.solve()
+        limit_easy_2, nodes_size_easy_2 = prob_easy_2.general_search()
 
-        easy_front.extend((frontier_size_easy_0,frontier_size_easy_1,frontier_size_easy_2))
+        easy_queue.extend((nodes_size_easy_0,nodes_size_easy_1,nodes_size_easy_2))
         easy_limit.extend((limit_easy_0, limit_easy_1, limit_easy_2))
-    ##Hard Puzzle##
+        
+        ##Hard Puzzle##
         # 1 6 7
         # 5 0 3
         # 4 8 2
 
         hard_puzzle = [1, 6, 7, 5, 0, 3, 4, 8, 2]   
-        hard_front = []
+        hard_queue = []
         hard_limit = []
         prob_hard_0 = Problem(hard_puzzle, "0")
-        limit_hard_0, frontier_size_hard_0 = prob_hard_0.solve()
+        limit_hard_0, nodes_size_hard_0 = prob_hard_0.general_search()
     
         prob_hard_1 = Problem(hard_puzzle, "1")
-        limit_hard_1, frontier_size_hard_1 = prob_hard_1.solve()
+        limit_hard_1, nodes_size_hard_1 = prob_hard_1.general_search()
 
         prob_hard_2 = Problem(hard_puzzle, "2")
-        limit_hard_2, frontier_size_hard_2 = prob_hard_2.solve()
+        limit_hard_2, nodes_size_hard_2 = prob_hard_2.general_search()
 
-        hard_front.extend((frontier_size_hard_0,frontier_size_hard_1,frontier_size_hard_2))
+        hard_queue.extend((nodes_size_hard_0,nodes_size_hard_1,nodes_size_hard_2))
         hard_limit.extend((limit_hard_0,limit_hard_1,limit_hard_2))
-
+        
         x_pos = [i for i, _ in enumerate(names)]
 
 
@@ -215,7 +210,7 @@ if __name__ == "__main__":
         plt.show()
 
         # Graph showing space complexity for easy puzzle
-        plt.bar(names, easy_front, color="green")
+        plt.bar(names, easy_queue, color="green")
         plt.xlabel("Algorithms")
         plt.ylabel("Space Complexity")
         plt.title("Space Complexity -- Easy Puzzle")
@@ -224,7 +219,7 @@ if __name__ == "__main__":
 
 
         # Graph showing space complexity for hard puzzle #
-        plt.bar(names, hard_front, color="red")
+        plt.bar(names, hard_queue, color="red")
         plt.xlabel("Algorithms")
         plt.ylabel("Space Complexity")
         plt.title("Space Complexity -- Hard Puzzle")
